@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { cart } = useApp();
+  const { cart, siteContent } = useApp();
   const location = useLocation();
 
   useEffect(() => {
@@ -21,7 +21,8 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Identidad', path: '/#identidad' },
-    { name: 'Rituales', path: '/tienda' },
+    { name: 'Música', path: '/tienda' },
+    { name: 'Rituales', path: '/rituales' },
   ];
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -29,11 +30,12 @@ export default function Navbar() {
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/': return null;
-      case '/tienda': return 'RITUALES';
+      case '/tienda': return 'MÚSICA Y ARCO';
+      case '/rituales': return 'RITUALES';
       case '/cart': return 'CARRITO';
       case '/admin': return 'GESTIÓN';
       case '/login': return 'ACCESO';
-      default: return 'BÁRBARA HIGUERA';
+      default: return siteContent.siteName.toUpperCase();
     }
   };
 
@@ -54,9 +56,16 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -5 }}
               >
-                <span className="text-xl lg:text-2xl tracking-[0.4em] font-sans font-extrabold uppercase text-white transition-all group-hover:text-brand-gold">
-                  BÁRBARA <span className="text-brand-gold font-light italic">HIGUERA</span>
-                </span>
+                <h1 className="text-xl lg:text-2xl tracking-[0.4em] font-sans font-extrabold uppercase text-white transition-all group-hover:text-brand-gold">
+                  {siteContent.siteName.split(' ').map((word, i, arr) => (
+                    <span 
+                      key={i} 
+                      className={cn(i === arr.length - 1 && arr.length > 1 ? "text-brand-gold font-light italic" : "")}
+                    >
+                      {word}{i < arr.length - 1 ? ' ' : ''}
+                    </span>
+                  ))}
+                </h1>
                 <span className="text-[7px] uppercase tracking-[0.8em] text-white/30 font-bold group-hover:text-white/60 transition-all flex mt-1">ESTUDIO RITUAL</span>
               </motion.div>
             ) : (

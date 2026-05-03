@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Admin() {
-  const { products, updateProduct, isAdmin, logout, siteContent, updateSiteContent, addProduct, removeProduct, changePassword } = useApp();
+  const { products, updateProduct, isAdmin, logout, siteContent, updateSiteContent, addProduct, removeProduct, changePassword, loading } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'inventory' | 'content' | 'links' | 'settings'>('inventory');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -28,10 +28,10 @@ export default function Admin() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!loading && !isAdmin) {
       navigate('/login');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, loading, navigate]);
 
   // Auto-save logic for site content and links
   useEffect(() => {
@@ -109,8 +109,8 @@ export default function Admin() {
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
-      setUploadError("Imagen demasiado grande (Límite 8MB).");
+    if (file.size > 0.8 * 1024 * 1024) {
+      setUploadError("Imagen demasiado grande para base de datos (Límite 0.8MB). Para imágenes mayores, usa una URL externa.");
       return;
     }
 
@@ -244,15 +244,19 @@ export default function Admin() {
     }
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (newPass.length < 8) {
       setPassStatus('error');
       setTimeout(() => setPassStatus('idle'), 3000);
       return;
     }
-    changePassword(newPass);
-    setPassStatus('success');
-    setNewPass('');
+    const success = await changePassword(newPass);
+    if (success) {
+      setPassStatus('success');
+      setNewPass('');
+    } else {
+      setPassStatus('error');
+    }
     setTimeout(() => setPassStatus('idle'), 3000);
   };
 
@@ -293,15 +297,33 @@ export default function Admin() {
   const addSocialLink = () => {
     setEditedContent({
       ...editedContent,
-      socialLinks: [...editedContent.socialLinks, { platform: 'Nueva Red', url: '' }]
+      socialLinks: [...(editedContent.socialLinks || []), { platform: 'Nueva Red', url: '' }]
     });
   };
 
   const addCustomButton = () => {
     setEditedContent({
       ...editedContent,
-      customButtons: [...editedContent.customButtons, { label: 'Nuevo Botón', url: '' }]
+      customButtons: [...(editedContent.customButtons || []), { label: 'Nuevo Botón', url: '' }]
     });
+  };
+
+  const addBenefit = () => {
+    setEditedContent({
+      ...editedContent,
+      ritualsBenefits: [...(editedContent.ritualsBenefits || []), { icon: 'Brain', title: 'Nuevo Beneficio', desc: 'Descripción...' }]
+    });
+  };
+
+  const updateBenefit = (index: number, field: 'title' | 'desc' | 'icon', value: string) => {
+    const newBenefits = [...editedContent.ritualsBenefits];
+    newBenefits[index] = { ...newBenefits[index], [field]: value };
+    setEditedContent({ ...editedContent, ritualsBenefits: newBenefits });
+  };
+
+  const removeBenefit = (index: number) => {
+    const newBenefits = editedContent.ritualsBenefits.filter((_, i) => i !== index);
+    setEditedContent({ ...editedContent, ritualsBenefits: newBenefits });
   };
 
   const removeSocialLink = (index: number) => {
@@ -400,7 +422,7 @@ export default function Admin() {
           <div>
             <div className="flex justify-between items-center mb-10">
               <div className="flex items-center gap-6">
-                <h2 className="text-3xl font-display italic">Servicios y Canciones</h2>
+                <h2 className="text-3xl font-display italic">Servicios y Ritualismo</h2>
                 <AnimatePresence>
                   {showAddSuccess && (
                     <motion.span 
@@ -409,7 +431,7 @@ export default function Admin() {
                       exit={{ opacity: 0 }}
                       className="text-[9px] uppercase tracking-widest text-gold font-bold bg-gold/10 px-4 py-2 rounded-full"
                     >
-                      Nuevo Registro Creado
+                      Nueva Invocación Creada
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -418,7 +440,7 @@ export default function Admin() {
                 onClick={handleAddProduct}
                 className="bg-paper text-ink px-8 py-4 rounded-full text-[10px] uppercase tracking-[0.3em] font-black flex items-center gap-3 hover:bg-gold hover:text-paper transition-all"
               >
-                <Plus size={14} strokeWidth={3} /> Nuevo Registro
+                <Plus size={14} strokeWidth={3} /> Nueva Obra
               </button>
             </div>
             
@@ -684,9 +706,11 @@ export default function Admin() {
                             onChange={(e) => updateProduct(product.id, { category: e.target.value as any })}
                             className="w-full bg-paper/[0.03] border border-paper/10 rounded-xl px-4 py-3 text-[10px] uppercase tracking-widest outline-none appearance-none focus:border-gold/50 cursor-pointer"
                           >
-                            <option value="music">Música</option>
-                            <option value="merch">Ritual</option>
-                            <option value="art">Digital</option>
+                            <option value="music">Música (Frecuencia)</option>
+                            <option value="lyrics">Letras (Escritura)</option>
+                            <option value="ritual">Ritual (Concentración/Técnica)</option>
+                            <option value="merch">Objeto (Físico)</option>
+                            <option value="art">Arte (Digital)</option>
                           </select>
                         </div>
                       </div>
@@ -781,13 +805,56 @@ export default function Admin() {
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
-          </div>
-        ) : activeTab === 'content' ? (
-          <div className="space-y-20">
+             ) : activeTab === 'content' ? (
+          <div className="space-y-32">
+            {/* Header / Global */}
+            <section className="bg-paper/[0.02] border border-paper/10 rounded-[3rem] p-12 space-y-10">
+               <h2 className="text-3xl font-display italic text-gold">Identidad Global</h2>
+               <div className="grid lg:grid-cols-2 gap-10">
+                 <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Nombre del Sitio / Marca</label>
+                    <input 
+                      value={editedContent.siteName}
+                      onChange={(e) => setEditedContent({...editedContent, siteName: e.target.value})}
+                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-2xl font-display italic outline-none focus:border-gold transition-all text-paper"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Opacidad Fondo Global ({Math.round(editedContent.globalBgOpacity * 100)}%)</label>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={editedContent.globalBgOpacity}
+                      onChange={(e) => setEditedContent({...editedContent, globalBgOpacity: parseFloat(e.target.value)})}
+                      className="w-full accent-gold h-12 bg-transparent cursor-pointer"
+                    />
+                  </div>
+               </div>
+               <div>
+                  <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Imagen de Fondo Global (URL / Subida)</label>
+                  <div className="flex gap-6 items-center">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden border border-paper/10 bg-ink relative block">
+                      <img src={editedContent.globalBgImage} className="w-full h-full object-cover grayscale" />
+                      <label className="absolute inset-0 bg-ink/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                        <Upload size={14} />
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUploadWithFeedback(e, 'globalBgImage', true)} />
+                      </label>
+                    </div>
+                    <input 
+                      value={editedContent.globalBgImage}
+                      onChange={(e) => setEditedContent({...editedContent, globalBgImage: e.target.value})}
+                      className="flex-grow bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-[10px] font-mono outline-none focus:border-gold transition-all text-paper"
+                      placeholder="https://images..."
+                    />
+                  </div>
+               </div>
+            </section>
+
             <div className="grid lg:grid-cols-2 gap-20">
               <div className="space-y-12">
-                <h2 className="text-3xl font-display italic mb-10">Mural de Inicio</h2>
+                <h2 className="text-3xl font-display italic mb-10">Página de Inicio</h2>
                 
                 <div className="space-y-8">
                    <div>
@@ -796,7 +863,7 @@ export default function Admin() {
                       <div className="group relative w-32 h-32 rounded-2xl overflow-hidden bg-ink flex-shrink-0 border border-paper/10 shadow-2xl">
                         <img src={editedContent.heroImage} alt="" className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                          <label className="p-2 bg-paper/10 rounded-full hover:bg-gold hover:text-ink cursor-pointer transition-all">
+                           <label className="p-2 bg-paper/10 rounded-full hover:bg-gold hover:text-ink cursor-pointer transition-all">
                              <Upload size={14} />
                              <input 
                                type="file" 
@@ -821,16 +888,12 @@ export default function Admin() {
                           className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl px-6 py-4 text-[10px] font-mono outline-none focus:border-gold transition-all text-paper"
                           placeholder="https://images..."
                         />
-                        <div className="p-4 bg-gold/5 border border-gold/10 rounded-xl flex items-center gap-3">
-                          <Sparkles size={14} className="text-gold" />
-                          <p className="text-[9px] text-gold/60 uppercase tracking-widest">Sugerencia: Usa imágenes de 1920x1080 o texturas abstractas.</p>
-                        </div>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Título Hero</label>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Título Hero (Usa ',' para saltos de estilo)</label>
                     <input 
                       value={editedContent.heroTitle}
                       onChange={(e) => setEditedContent({...editedContent, heroTitle: e.target.value})}
@@ -843,25 +906,109 @@ export default function Admin() {
                     <textarea 
                       value={editedContent.heroSubtitle}
                       onChange={(e) => setEditedContent({...editedContent, heroSubtitle: e.target.value})}
-                      rows={4}
+                      rows={3}
                       className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light leading-relaxed outline-none focus:border-gold transition-all text-paper"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Manifesto (Frase Impacto)</label>
+                    <textarea 
+                      value={editedContent.manifestoQuote}
+                      onChange={(e) => setEditedContent({...editedContent, manifestoQuote: e.target.value})}
+                      rows={2}
+                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-xl font-display italic outline-none focus:border-gold transition-all text-paper"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Frase de Cierre (Rituales)</label>
+                    <textarea 
+                      value={editedContent.closingQuote}
+                      onChange={(e) => setEditedContent({...editedContent, closingQuote: e.target.value})}
+                      rows={2}
+                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-xl font-display italic outline-none focus:border-gold transition-all text-paper"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-12">
-                <h2 className="text-3xl font-display italic mb-10">Imagen de Filosofía</h2>
+                <h2 className="text-3xl font-display italic mb-10">Rituales (Landing)</h2>
                 
                 <div className="space-y-8">
                    <div>
-                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Imagen de Sección (URL / Subida)</label>
-                    <div className="flex gap-4">
-                      <div className="group relative w-32 h-32 rounded-2xl overflow-hidden bg-ink flex-shrink-0 border border-paper/10 shadow-2xl">
-                        <img src={editedContent.philosophyImage || ''} alt="" className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" />
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Título de Rituales</label>
+                    <input 
+                      value={editedContent.ritualsTitle}
+                      onChange={(e) => setEditedContent({...editedContent, ritualsTitle: e.target.value})}
+                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-2xl font-display italic outline-none focus:border-gold transition-all text-paper"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Descripción / Introducción</label>
+                    <textarea 
+                      value={editedContent.ritualsSubtitle}
+                      onChange={(e) => setEditedContent({...editedContent, ritualsSubtitle: e.target.value})}
+                      rows={3}
+                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light outline-none focus:border-gold transition-all text-paper"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40">Beneficios (Grid)</label>
+                      <button onClick={addBenefit} className="text-gold"><Plus size={16} /></button>
+                    </div>
+                    <div className="space-y-4">
+                      {editedContent.ritualsBenefits?.map((benefit, i) => (
+                        <div key={i} className="bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 space-y-4 relative group">
+                           <button onClick={() => removeBenefit(i)} className="absolute top-4 right-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14}/></button>
+                           <div className="grid grid-cols-2 gap-4">
+                             <input 
+                               value={benefit.title}
+                               onChange={(e) => updateBenefit(i, 'title', e.target.value)}
+                               placeholder="Título"
+                               className="bg-transparent border-b border-paper/10 text-xs font-bold uppercase tracking-widest outline-none text-gold"
+                             />
+                             <select
+                               value={benefit.icon}
+                               onChange={(e) => updateBenefit(i, 'icon', e.target.value)}
+                               className="bg-transparent border-b border-paper/10 text-[10px] uppercase outline-none"
+                             >
+                               <option value="Brain">Cerebro / Mente</option>
+                               <option value="Zap"> Energía / Foco</option>
+                               <option value="Heart">Corazón / Emoción</option>
+                               <option value="Sparkles">Magia / Creatividad</option>
+                               <option value="Music">Música</option>
+                             </select>
+                           </div>
+                           <textarea 
+                              value={benefit.desc}
+                              onChange={(e) => updateBenefit(i, 'desc', e.target.value)}
+                              rows={2}
+                              className="w-full bg-transparent text-[11px] font-light opacity-60 outline-none"
+                              placeholder="Breve descripción..."
+                           />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <section className="space-y-12 pt-12 border-t border-paper/5">
+              <h2 className="text-3xl font-display italic mb-10">Sección de Filosofía</h2>
+              <div className="grid lg:grid-cols-2 gap-12">
+                 <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Imagen de Sección</label>
+                    <div className="group relative aspect-[16/9] rounded-3xl overflow-hidden bg-ink border border-paper/10">
+                        <img src={editedContent.philosophyImage || ''} alt="" className="w-full h-full object-cover grayscale transition-all duration-1000 group-hover:grayscale-0 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                           <label className="p-2 bg-paper/10 rounded-full hover:bg-gold hover:text-ink cursor-pointer transition-all">
-                             <Upload size={14} />
+                           <label className="p-4 bg-paper/20 rounded-full hover:bg-gold hover:text-ink cursor-pointer transition-all">
+                             <Upload size={20} />
                              <input 
                                type="file" 
                                className="hidden" 
@@ -869,56 +1016,51 @@ export default function Admin() {
                                onChange={(e) => handleImageUploadWithFeedback(e, 'philosophyImage', true)}
                              />
                            </label>
-                           <button 
-                             onClick={() => regenerateWithAI('philosophyImage')}
-                             className="p-2 bg-gold/20 text-gold rounded-full hover:bg-gold hover:text-ink transition-all"
-                             title="Regenerar con IA"
-                           >
-                             <RotateCcw size={14} />
-                           </button>
                         </div>
-                      </div>
-                      <input 
-                        value={editedContent.philosophyImage || ''}
-                        onChange={(e) => setEditedContent({...editedContent, philosophyImage: e.target.value})}
-                        className="flex-grow bg-paper/[0.03] border border-paper/10 rounded-2xl px-6 py-4 text-[10px] font-mono outline-none focus:border-gold transition-all text-paper"
-                        placeholder="https://..."
-                      />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Eje Central (Título)</label>
                     <input 
-                      value={editedContent.philosophyTitle}
-                      onChange={(e) => setEditedContent({...editedContent, philosophyTitle: e.target.value})}
-                      className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-3xl font-display italic outline-none focus:border-gold transition-all text-paper"
+                      value={editedContent.philosophyImage || ''}
+                      onChange={(e) => setEditedContent({...editedContent, philosophyImage: e.target.value})}
+                      className="w-full mt-4 bg-paper/[0.03] border border-paper/10 rounded-xl px-4 py-3 text-[10px] font-mono outline-none"
+                      placeholder="URL de Imagen..."
                     />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
+                 </div>
+                 <div className="space-y-6">
                     <div>
-                      <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Bloque 1</label>
-                      <textarea 
-                        value={editedContent.philosophyText1}
-                        onChange={(e) => setEditedContent({...editedContent, philosophyText1: e.target.value})}
-                        rows={3}
-                        className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light outline-none focus:border-gold transition-all text-paper"
+                      <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Tesis Central</label>
+                      <input 
+                        value={editedContent.philosophyTitle}
+                        onChange={(e) => setEditedContent({...editedContent, philosophyTitle: e.target.value})}
+                        className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-2xl font-display italic outline-none focus:border-gold transition-all text-paper"
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Bloque 2</label>
-                      <textarea 
-                        value={editedContent.philosophyText2}
-                        onChange={(e) => setEditedContent({...editedContent, philosophyText2: e.target.value})}
-                        rows={3}
-                        className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light outline-none focus:border-gold transition-all text-paper"
-                      />
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Bloque de Narrativa</label>
+                        <textarea 
+                          value={editedContent.philosophyText1}
+                          onChange={(e) => setEditedContent({...editedContent, philosophyText1: e.target.value})}
+                          rows={4}
+                          className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light leading-relaxed outline-none focus:border-gold transition-all text-paper"
+                          placeholder="Bloque 1 de texto..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-40 block mb-3">Misión Detallada (Bloque 2)</label>
+                        <textarea 
+                          value={editedContent.philosophyText2}
+                          onChange={(e) => setEditedContent({...editedContent, philosophyText2: e.target.value})}
+                          rows={4}
+                          className="w-full bg-paper/[0.03] border border-paper/10 rounded-2xl p-6 text-sm font-light leading-relaxed outline-none focus:border-gold transition-all text-paper"
+                          placeholder="Bloque 2 de texto..."
+                        />
+                      </div>
                     </div>
-                  </div>
-                </div>
+                 </div>
               </div>
-            </div>
+            </section>
+          </div>
+           </div>
           </div>
         ) : activeTab === 'settings' ? (
           <div className="max-w-2xl mx-auto py-12">

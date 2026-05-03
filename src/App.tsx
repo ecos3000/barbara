@@ -5,13 +5,14 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import BackToTop from './components/BackToTop';
 import ScrollToHashElement from './components/ScrollToHashElement';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
+import Rituals from './pages/Rituals';
 import Admin from './pages/Admin';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
@@ -26,6 +27,7 @@ function AnimatedRoutes() {
         <Routes location={location}>
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
           <Route path="/tienda" element={<PageTransition><Shop /></PageTransition>} />
+          <Route path="/rituales" element={<PageTransition><Rituals /></PageTransition>} />
           <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
           <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
@@ -52,17 +54,40 @@ function PageTransition({ children }: { children: React.ReactNode }) {
   );
 }
 
+function GlobalBackground() {
+  const { siteContent } = useApp();
+  
+  return (
+    <>
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 grayscale"
+        style={{
+          backgroundImage: `url("${siteContent.globalBgImage}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          mixBlendMode: 'luminosity',
+          opacity: siteContent.globalBgOpacity
+        }}
+      />
+      <div className="noise-filter" />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <AppProvider>
       <Router>
-        <div className="min-h-screen bg-brand-black text-brand-paper selection:bg-brand-gold/30 relative overflow-x-hidden transition-colors duration-1000">
-          {/* Subtle Structural Background */}
-          <div className="noise-filter" />
+        <div className="min-h-screen bg-[#050505] text-brand-paper selection:bg-brand-gold/30 relative overflow-x-hidden transition-colors duration-1000">
+          <GlobalBackground />
+          
+          {/* Structural Lines */}
           <div className="fixed inset-0 pointer-events-none z-0">
-             <div className="absolute top-0 left-[15%] w-[1px] h-full bg-white/[0.03]" />
-             <div className="absolute top-0 right-[15%] w-[1px] h-full bg-white/[0.03]" />
-             <div className="absolute top-[30%] left-0 w-full h-[1px] bg-white/[0.03]" />
+             <div className="absolute top-0 left-[10%] w-[1px] h-full bg-white/[0.02]" />
+             <div className="absolute top-0 right-[10%] w-[1px] h-full bg-white/[0.02]" />
+             <div className="absolute top-[20%] left-0 w-full h-[1px] bg-white/[0.02]" />
+             <div className="absolute top-[80%] left-0 w-full h-[1px] bg-white/[0.02]" />
           </div>
 
           <div className="relative z-10 flex flex-col min-h-screen">

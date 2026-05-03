@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      // Hardcoded admin for initial setup or check admins collection
+      return isVerified() && (
+        request.auth.token.email == 'bspock1990@gmail.com' || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'name', 'price', 'image', 'category', 'stock']) &&
+             data.keys().size() >= 6 &&
+             data.id is string && data.id.size() <= 100 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.price is number && data.price >= 0 &&
+             data.image is string && data.image.size() <= 2000 &&
+             data.category in ['music', 'merch', 'art', 'ritual', 'lyrics'] &&
+             data.stock is number && data.stock >= 0 &&
+             (!('audioUrl' in data) || (data.audioUrl is string && data.audioUrl.size() <= 2000)) &&
+             (!('extra' in data) || (data.extra is string && data.extra.size() <= 2000)) &&
+             (!('options' in data) || data.options is list) &&
+             (!('variants' in data) || data.variants is list);
+    }
+
+    function isValidSiteContent(data) {
+      return data.heroTitle is string && data.heroTitle.size() <= 500 &&
+             data.heroSubtitle is string && data.heroSubtitle.size() <= 2000 &&
+             data.heroImage is string && data.heroImage.size() <= 2000;
+    }
+
+    // --- Collections ---
+
+    match /rituals/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isAdmin() && isValidProduct(incoming()) && incoming().id == existing().id;
+      allow delete: if isAdmin();
+    }
+
+    match /settings/siteConfig {
+      allow read: if true;
+      allow update: if isAdmin() && isValidSiteContent(incoming());
+    }
+    
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && request.auth.uid == adminId;
+    }
+  }
+}

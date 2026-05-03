@@ -6,11 +6,12 @@ import { cn } from '../lib/utils';
 
 export default function Shop() {
   const { products, addToCart } = useApp();
-  const [filter, setFilter] = useState<'all' | 'music' | 'merch' | 'art'>('all');
+  const [filter, setFilter] = useState<'all' | 'music' | 'lyrics' | 'merch' | 'art'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [maxPrice, setMaxPrice] = useState(1000);
 
   const filteredProducts = products.filter(p => {
+    if (p.category === 'ritual') return false; // Rituals have their own page
     const matchesCategory = filter === 'all' || p.category === filter;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -36,7 +37,7 @@ export default function Shop() {
         {/* Professional Minimal Filters */}
         <div className="mt-24 flex flex-col md:flex-row gap-12 items-center w-full justify-between border-y border-white/5 py-10">
            <div className="flex flex-wrap gap-14">
-              {(['all', 'music', 'merch', 'art'] as const).map((cat) => (
+              {(['all', 'music', 'lyrics', 'merch', 'art'] as const).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setFilter(cat)}
@@ -45,7 +46,10 @@ export default function Shop() {
                     filter === cat ? "text-brand-gold" : "text-white/20 hover:text-white/60"
                   )}
                 >
-                  {cat === 'all' ? 'Todo' : cat === 'music' ? 'Frecuencia' : cat === 'merch' ? 'Objeto' : 'Imagen'}
+                  {cat === 'all' ? 'Todo' : 
+                   cat === 'music' ? 'Frecuencia' : 
+                   cat === 'lyrics' ? 'Escritura' :
+                   cat === 'merch' ? 'Objeto' : 'Imagen'}
                   {filter === cat && (
                     <motion.div layoutId="shopFilterUnder" className="absolute -bottom-2 left-0 w-full h-[1px] bg-brand-gold" />
                   )}

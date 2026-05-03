@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Ritual Product",
+      "description": "A musical ritual or product offered in the shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "category": { "type": "string", "enum": ["music", "merch", "art", "ritual", "lyrics"] },
+        "stock": { "type": "number" },
+        "extra": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "values": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "Variant"
+          }
+        }
+      },
+      "required": ["id", "name", "price", "image", "category", "stock"]
+    },
+    "Variant": {
+      "title": "Product Variant",
+      "description": "A specific combination of options for a product",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "combination": { "type": "object" }
+      },
+      "required": ["id", "title", "price", "stock", "combination"]
+    },
+    "SiteContent": {
+      "title": "Site Configuration",
+      "description": "Global site titles, images, and content",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "philosophyTitle": { "type": "string" },
+        "philosophyText1": { "type": "string" },
+        "philosophyText2": { "type": "string" },
+        "philosophyImage": { "type": "string" },
+        "socialLinks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "platform": { "type": "string" },
+              "url": { "type": "string" }
+            }
+          }
+        },
+        "customButtons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "url": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rituals": {
+      "schema": "Product",
+      "description": "Collection of all products/rituals"
+    },
+    "settings/siteConfig": {
+      "schema": "SiteContent",
+      "description": "Global site content configuration"
+    }
+  }
+}
