@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=Italiana&display=swap');
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant+Garamond", serif;
+  --font-stylized: "Italiana", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-brand-black: #080808;
+  --color-brand-gold: #B4975A;
+  --color-brand-slate: #1A1A1C;
+  --color-brand-paper: #F9F9F9;
+  
+  --background-image-grain: url("https://www.transparenttextures.com/patterns/pinstriped-suit.png");
+}
+
+@layer base {
+  body {
+    @apply bg-brand-black text-brand-paper selection:bg-brand-gold selection:text-brand-black antialiased overflow-x-hidden font-sans;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight text-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-10 py-5 bg-white text-brand-black text-[10px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-brand-gold active:scale-[0.98] flex items-center justify-center gap-4;
+  }
+  
+  .btn-outline {
+    @apply px-10 py-5 border border-white/20 text-white text-[10px] uppercase tracking-[0.3em] font-bold transition-all hover:border-brand-gold hover:text-brand-gold active:scale-[0.98] flex items-center justify-center gap-4;
+  }
+
+  .glass-panel {
+    @apply bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-2xl;
+  }
+}
+
+.noise-filter {
+  @apply fixed inset-0 pointer-events-none opacity-[0.02] z-[100] bg-grain;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-brand-black;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-800 hover:bg-brand-gold transition-all;
+}
