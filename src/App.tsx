@@ -22,13 +22,15 @@ function AnimatedRoutes() {
   
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-        <Route path="/tienda" element={<PageTransition><Shop /></PageTransition>} />
-        <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
-        <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
-        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
-      </Routes>
+      <motion.div key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/tienda" element={<PageTransition><Shop /></PageTransition>} />
+          <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
+          <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        </Routes>
+      </motion.div>
     </AnimatePresence>
   );
 }
