@@ -191,6 +191,8 @@ interface AppContextType {
   siteContent: SiteContent;
   updateSiteContent: (content: Partial<SiteContent>) => Promise<void>;
   loading: boolean;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -201,6 +203,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<{ product: Product; variantId?: string; selectedOptions?: Record<string, string>; quantity: number }[]>([]);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved as 'light' | 'dark') || 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   // Listen for Auth changes
   useEffect(() => {
@@ -367,7 +384,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{ 
       products: (products.length === 0 && !loading) ? INITIAL_PRODUCTS : products, 
       cart, addToCart, removeFromCart, updateProduct, addProduct, removeProduct,
-      changePassword, total, isAdmin: !!user, user, login, logout, siteContent, updateSiteContent, loading
+      changePassword, total, isAdmin: !!user, user, login, logout, siteContent, updateSiteContent, loading,
+      theme, toggleTheme
     }}>
       {children}
     </AppContext.Provider>

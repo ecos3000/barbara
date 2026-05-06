@@ -7,12 +7,12 @@ html {
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant+Garamond", serif;
+  --font-display: "Cormorant Garamond", serif;
   --font-stylized: "Italiana", serif;
   --font-mono: "JetBrains Mono", monospace;
   
   --color-brand-black: #080808;
-  --color-brand-gold: #B4975A;
+  --color-brand-gold: #EAB308; /* More intense, brighter gold */
   --color-brand-slate: #1A1A1C;
   --color-brand-paper: #F9F9F9;
   
@@ -21,11 +21,19 @@ html {
 
 @layer base {
   body {
-    @apply bg-brand-black text-brand-paper selection:bg-brand-gold selection:text-brand-black antialiased overflow-x-hidden font-sans;
+    @apply bg-brand-black text-brand-paper selection:bg-brand-gold selection:text-brand-black antialiased overflow-x-hidden font-sans transition-colors duration-500;
+  }
+
+  .light body {
+    @apply bg-brand-paper text-brand-black;
   }
 
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight text-white;
+    @apply font-display tracking-tight text-white transition-colors duration-500;
+  }
+
+  .light h1, .light h2, .light h3, .light h4 {
+    @apply text-brand-black;
   }
 }
 
@@ -34,12 +42,24 @@ html {
     @apply px-10 py-5 bg-white text-brand-black text-[10px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-brand-gold active:scale-[0.98] flex items-center justify-center gap-4;
   }
   
+  .light .btn-primary {
+    @apply bg-brand-black text-brand-paper;
+  }
+  
   .btn-outline {
     @apply px-10 py-5 border border-white/20 text-white text-[10px] uppercase tracking-[0.3em] font-bold transition-all hover:border-brand-gold hover:text-brand-gold active:scale-[0.98] flex items-center justify-center gap-4;
   }
 
+  .light .btn-outline {
+    @apply border-brand-black/20 text-brand-black;
+  }
+
   .glass-panel {
     @apply bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-2xl;
+  }
+
+  .light .glass-panel {
+    @apply bg-brand-black/[0.02] border-brand-black/5;
   }
 }
 

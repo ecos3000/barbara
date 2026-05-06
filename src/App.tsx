@@ -17,6 +17,7 @@ import Admin from './pages/Admin';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from './lib/utils';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -55,22 +56,30 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 function GlobalBackground() {
-  const { siteContent } = useApp();
+  const { siteContent, theme } = useApp();
   
   return (
     <>
       <div 
-        className="fixed inset-0 pointer-events-none z-0 grayscale"
+        className={cn(
+          "fixed inset-0 pointer-events-none z-0 grayscale transition-opacity duration-1000",
+          theme === 'light' ? "opacity-10" : ""
+        )}
         style={{
           backgroundImage: `url("${siteContent.globalBgImage}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          mixBlendMode: 'luminosity',
-          opacity: siteContent.globalBgOpacity
+          mixBlendMode: theme === 'light' ? 'multiply' : 'luminosity',
+          opacity: theme === 'light' ? siteContent.globalBgOpacity * 0.5 : siteContent.globalBgOpacity
         }}
       />
       <div className="noise-filter" />
-      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+      <div className={cn(
+        "fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000",
+        theme === 'dark' 
+          ? "bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" 
+          : "bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.8)_0%,transparent_100%)] opacity-30"
+      )} />
     </>
   );
 }
@@ -78,30 +87,41 @@ function GlobalBackground() {
 export default function App() {
   return (
     <AppProvider>
-      <Router>
-        <div className="min-h-screen bg-[#050505] text-brand-paper selection:bg-brand-gold/30 relative overflow-x-hidden transition-colors duration-1000">
-          <GlobalBackground />
-          
-          {/* Structural Lines */}
-          <div className="fixed inset-0 pointer-events-none z-0">
-             <div className="absolute top-0 left-[10%] w-[1px] h-full bg-white/[0.02]" />
-             <div className="absolute top-0 right-[10%] w-[1px] h-full bg-white/[0.02]" />
-             <div className="absolute top-[20%] left-0 w-full h-[1px] bg-white/[0.02]" />
-             <div className="absolute top-[80%] left-0 w-full h-[1px] bg-white/[0.02]" />
-          </div>
-
-          <div className="relative z-10 flex flex-col min-h-screen">
-            <ScrollToHashElement />
-            <BackToTop />
-            <Navbar />
-            <main className="flex-grow">
-              <AnimatedRoutes />
-            </main>
-            <Footer />
-          </div>
-        </div>
-      </Router>
+      <AppWrapper />
     </AppProvider>
+  );
+}
+
+function AppWrapper() {
+  const { theme } = useApp();
+  
+  return (
+    <Router>
+      <div className={cn(
+        "min-h-screen relative overflow-x-hidden transition-colors duration-1000",
+        theme === 'dark' ? "bg-brand-black text-brand-paper" : "bg-brand-paper text-brand-black"
+      )}>
+        <GlobalBackground />
+        
+        {/* Structural Lines */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+           <div className={cn("absolute top-0 left-[10%] w-[1px] h-full", theme === 'dark' ? "bg-white/[0.02]" : "bg-black/[0.02]")} />
+           <div className={cn("absolute top-0 right-[10%] w-[1px] h-full", theme === 'dark' ? "bg-white/[0.02]" : "bg-black/[0.02]")} />
+           <div className={cn("absolute top-[20%] left-0 w-full h-[1px]", theme === 'dark' ? "bg-white/[0.02]" : "bg-black/[0.02]")} />
+           <div className={cn("absolute top-[80%] left-0 w-full h-[1px]", theme === 'dark' ? "bg-white/[0.02]" : "bg-black/[0.02]")} />
+        </div>
+
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <ScrollToHashElement />
+          <BackToTop />
+          <Navbar />
+          <main className="flex-grow">
+            <AnimatedRoutes />
+          </main>
+          <Footer />
+        </div>
+      </div>
+    </Router>
   );
 }
 

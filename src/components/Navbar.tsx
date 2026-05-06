@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, Menu, X, User, Heart, Lock } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, Heart, Lock, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { cart, siteContent } = useApp();
+  const { cart, siteContent, theme, toggleTheme } = useApp();
   const location = useLocation();
 
   useEffect(() => {
@@ -47,26 +47,28 @@ export default function Navbar() {
       scrolled ? "bg-brand-black/95 backdrop-blur-md border-b border-white/5 h-20" : "bg-transparent h-28"
     )}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 w-full flex items-center justify-between">
-        <Link to="/" className="group flex flex-col">
+        <Link to="/" className="group flex items-center gap-4">
           <AnimatePresence mode="wait">
             {!dynamicTitle ? (
               <motion.div
                 key="logo"
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex flex-col leading-[0.8]"
               >
-                <h1 className="text-xl lg:text-2xl tracking-[0.4em] font-sans font-extrabold uppercase text-white transition-all group-hover:text-brand-gold">
-                  {siteContent.siteName.split(' ').map((word, i, arr) => (
-                    <span 
-                      key={i} 
-                      className={cn(i === arr.length - 1 && arr.length > 1 ? "text-brand-gold font-light italic" : "")}
-                    >
-                      {word}{i < arr.length - 1 ? ' ' : ''}
-                    </span>
-                  ))}
-                </h1>
-                <span className="text-[7px] uppercase tracking-[0.8em] text-white/30 font-bold group-hover:text-white/60 transition-all flex mt-1">ESTUDIO RITUAL</span>
+                {siteContent.siteName.split(' ').map((word, i, arr) => (
+                  <span 
+                    key={i} 
+                    className={cn(
+                      "text-xl lg:text-2xl tracking-[0.4em] font-sans font-extrabold uppercase transition-all whitespace-nowrap",
+                      i === arr.length - 1 && arr.length > 1 ? "text-brand-gold font-light italic mt-1" : "text-white light:text-brand-black"
+                    )}
+                  >
+                    {word}
+                  </span>
+                ))}
+                <span className="text-[6px] uppercase tracking-[0.6em] text-white/30 font-bold group-hover:text-white/60 transition-all mt-3 block">ESTUDIO RITUAL</span>
               </motion.div>
             ) : (
               <motion.div
@@ -104,7 +106,7 @@ export default function Navbar() {
               />
             </Link>
           ))}
-          <Link to="/cart" className="relative group flex items-center gap-3 pl-8 border-l border-white/10 hover:text-brand-gold transition-colors">
+          <Link to="/cart" className="relative group flex items-center gap-3 pl-8 border-l border-white/10 hover:text-brand-gold transition-colors dark:text-white light:text-brand-black">
             <ShoppingBag size={16} strokeWidth={2} />
             <span className="text-[9px] uppercase tracking-widest font-black">Carrito</span>
             {cartCount > 0 && (
@@ -113,6 +115,14 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+
+          <button 
+            onClick={toggleTheme}
+            className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all text-white light:text-brand-black light:bg-black/5"
+            aria-label="Cambiar tema"
+          >
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
         </div>
 
         <div className="md:hidden">
